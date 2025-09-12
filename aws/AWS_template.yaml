@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  GeminiApiKey:
+    Type: String
+    Description: Gemini API Key
+    NoEcho: true
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: quiz-ai-bucket
+      AccessControl: Private  
+      VersioningConfiguration:
+        Status: Suspended  
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+
+  QuizAiECRRepo:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: quiz-ai
+      ImageTagMutability: MUTABLE
+
+  
+  GeminiApiSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: /ai-quiz/gen-quiz/gemini-api-key
+      Description: "Gemini API Key for Quiz AI application"
+      SecretString: !Sub '{"apiKey":"${GeminiApiKey}"}'
+      Tags:
+        - Key: Purpose
+          Value: QuizAI
+
+  ParamGeminiModel:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /ai-quiz/gen-quiz/gemini-model
+      Type: String
+      Value: gemini-2.5-flash-preview-05-20
+
+  ParamPdfExtractInputFolderLocation:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /ai-quiz/pdf-extract/input-folder
+      Type: String
+      Value: !Sub s3://${Bucket}/ai-quiz/pdf-extract/input-folder/
+
+  ParamPdfExtractOutputTextFolderLocation:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /ai-quiz/pdf-extract/text-output-folder
+      Type: String
+      Value: !Sub s3://${Bucket}/ai-quiz/pdf-extract/text-output-folder/
+
+  ParamQuizGenOutputQuizFolderLocation:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /ai-quiz/gen-quiz/quiz-output-folder
+      Type: String
+      Value: !Sub s3://${Bucket}/ai-quiz/gen-quiz/quiz-output-folder/
+
+Outputs:
+  GeminiSecretArn:
+    Description: ARN of the Gemini API Key secret in AWS Secrets Manager
+    Value: !Ref GeminiApiSecret
+    Export:
+      Name: QuizAI-GeminiSecretArn
+  QuizAiBucketName:
+    Description: Name of the S3 bucket
+    Value: !Ref Bucket
+    Export:
+      Name: QuizAI-BucketName        

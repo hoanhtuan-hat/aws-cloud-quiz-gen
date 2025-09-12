@@ -1,0 +1,9 @@
+REGION=us-east-2
+LOGIN_NAME=tuanho
+IMAGE_NAME=pdf-extract-image
+LAMBDA_FUNCTION_NAME=pdf_extract
+LAMBDA_FUNCTION_NAME_2=gemini_quiz
+IMAGE_TAG=latest
+STACK_NAME=pdf-extract-stack
+LAMBDA_TEMPLATE_FILE=lambda_template.yaml
+PDF_TEST_FILE=LinkedIn_2025.pdf

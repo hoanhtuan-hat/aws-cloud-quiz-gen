@@ -1,0 +1,131 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation template for PDF Extractor Lambda Function
+
+Parameters:
+  S3Prefix:
+    Type: String
+    Description: S3 prefix for the input folder
+  ImageUri:
+    Type: String
+    Description: ECR Image URI for the Lambda function    
+
+Resources:
+  # S3 Bucket
+  Bucket1:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  # Bucket Policy to enforce HTTPS
+  BucketPolicy1:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Bucket1
+      PolicyDocument:
+        Statement:
+          - Action: s3:*
+            Effect: Deny
+            Principal: '*'
+            Resource:
+              - !GetAtt Bucket1.Arn
+              - !Sub ${Bucket1.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  # IAM Role for Lambda
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: ECRAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:GetRepositoryPolicy
+                  - ecr:DescribeRepositories
+                  - ecr:ListImages
+                  - ecr:DescribeImages
+                  - ecr:BatchGetImage
+                  - ecr:GetLifecyclePolicy
+                  - ecr:GetLifecyclePolicyPreview
+                  - ecr:ListTagsForResource
+                  - ecr:DescribeImageScanFindings
+                Resource: '*'
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource: !Sub ${Bucket1.Arn}/*
+
+  # Lambda Function
+  pdfextractor:
+    Type: AWS::Lambda::Function
+    Properties:
+      PackageType: Image
+      ImageUri: !Ref ImageUri
+      MemorySize: 128
+      Timeout: 30
+      EphemeralStorage:
+        Size: 512
+      Architectures:
+        - x86_64
+      Role: !GetAtt LambdaExecutionRole.Arn
+      SnapStart:
+        ApplyOn: None
+
+  # Permission for S3 to invoke Lambda
+  S3InvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref pdfextractor
+      Principal: s3.amazonaws.com
+      SourceArn: !GetAtt Bucket1.Arn
+
+  # S3 Event Notification Configuration
+  BucketEventNotification:
+    Type: AWS::S3::Bucket
+    Properties:
+      Bucket: !Ref Bucket1
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: prefix
+                    Value: !Ref S3Prefix
+            Function: !GetAtt pdfextractor.Arn
+    DependsOn: S3InvokeLambdaPermission
+
+Outputs:
+  BucketName:
+    Description: Name of the created S3 bucket
+    Value: !Ref Bucket1
+  LambdaFunctionName:
+    Description: Name of the Lambda function
+    Value: !Ref pdfextractor
