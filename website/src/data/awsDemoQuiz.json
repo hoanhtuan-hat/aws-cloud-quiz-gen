@@ -1,0 +1,81 @@
+{
+  "categories": [
+    {
+      "name": "AWS",
+      "questions": [
+        {
+          "id": "aws-q1",
+          "text": "Which AWS service is primarily used to run containers without managing servers?",
+          "options": ["EC2", "ECS on Fargate", "EBS", "CloudFront"],
+          "correctOption": 1,
+          "points": 100
+        },
+        {
+          "id": "aws-q2",
+          "text": "S3 standard storage provides which durability SLA?",
+          "options": ["99.9%", "99.95%", "99.999999999%", "99%"],
+          "correctOption": 2,
+          "points": 200
+        },
+        {
+          "id": "aws-q3",
+          "text": "Which service provides serverless compute for event-driven code?",
+          "options": ["Lambda", "RDS", "EKS", "Elastic Beanstalk"],
+          "correctOption": 0,
+          "points": 300
+        },
+        {
+          "id": "aws-q4",
+          "text": "Which service distributes traffic across multiple targets in one or more AZs?",
+          "options": ["Route 53", "API Gateway", "Application Load Balancer", "Direct Connect"],
+          "correctOption": 2,
+          "points": 400
+        },
+        {
+          "id": "aws-q5",
+          "text": "Which database is managed relational service?",
+          "options": ["RDS", "DynamoDB", "ElastiCache", "Neptune"],
+          "correctOption": 0,
+          "points": 500
+        },
+        {
+          "id": "aws-q6",
+          "text": "To manage infrastructure as code with templates, use:",
+          "options": ["CloudFormation", "CloudTrail", "CloudWatch", "AWS Config"],
+          "correctOption": 0,
+          "points": 600
+        },
+        {
+          "id": "aws-q7",
+          "text": "Which service provides global DNS and health checks?",
+          "options": ["CloudFront", "Route 53", "Shield", "WAF"],
+          "correctOption": 1,
+          "points": 700
+        },
+        {
+          "id": "aws-q8",
+          "text": "Which storage is a block device that attaches to EC2?",
+          "options": ["EFS", "S3", "Glacier", "EBS"],
+          "correctOption": 3,
+          "points": 800
+        },
+        {
+          "id": "aws-q9",
+          "text": "Which service collects and visualizes metrics/logs for monitoring?",
+          "options": ["CloudWatch", "CloudTrail", "Config", "X-Ray"],
+          "correctOption": 0,
+          "points": 900
+        },
+        {
+          "id": "aws-q10",
+          "text": "Which service offers fully managed NoSQL key-value database?",
+          "options": ["Aurora", "DynamoDB", "OpenSearch", "DocumentDB"],
+          "correctOption": 1,
+          "points": 1000
+        }
+      ]
+    }
+  ],
+  "scoreInit": 0,
+  "meta": { "topic": "AWS", "count": 10, "layout": "single_column" }
+}
