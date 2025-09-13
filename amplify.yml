@@ -1,0 +1,27 @@
+# FILE: amplify.yml
+version: 1
+applications:
+  - appRoot: website
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+        build:
+          commands:
+            - npm run build  
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+    test:
+      phases:
+        preTest:
+          commands:
+            - echo "No tests configured"
+        test:
+          commands:
+            - echo "Skipping tests"
