@@ -8,7 +8,7 @@ import BadgeShowcase from './BadgeShowcase';
 import EventCalendar from './EventCalendar';
 import Community from './Community';
 import GameBoard from './GameBoard';
-import quizData from '../data/awsDemoQuiz.json'; // data mẫu
+import quizData1 from '../data/quizData.ts.json'; // data mẫu
 
 interface DashboardProps {
   onStartQuiz: () => void;
@@ -23,8 +23,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
 
   // + add: state game tối giản
   const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
-  const [score, setScore] = useState<number>((quizData as any).scoreInit ?? 0);
-  const categories = (quizData as any).categories || [];
+  const categories = quizData1.categories;
+  const [score, setScore] = useState<number>(quizData1.scoreInit ?? 0);
 
   // + add: handler click câu hỏi
   const handleSelectQuestion = (q: any) => {
