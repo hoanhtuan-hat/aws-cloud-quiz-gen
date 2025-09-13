@@ -4,72 +4,72 @@
       "name": "AWS",
       "questions": [
         {
-          "id": "aws-q1",
-          "text": "Which AWS service is primarily used to run containers without managing servers?",
-          "options": ["EC2", "ECS on Fargate", "EBS", "CloudFront"],
-          "correctOption": 1,
+          "id": "aws-100",
+          "text": "Which AWS service provides object storage with 11 9s durability?",
+          "options": ["EBS", "EFS", "S3 Standard", "Instance Store"],
+          "correctOption": 2,
           "points": 100
         },
         {
-          "id": "aws-q2",
-          "text": "S3 standard storage provides which durability SLA?",
-          "options": ["99.9%", "99.95%", "99.999999999%", "99%"],
-          "correctOption": 2,
+          "id": "aws-200",
+          "text": "Which option lets you run containers without managing servers?",
+          "options": ["EC2 Auto Scaling", "ECS on Fargate", "EKS on self-managed nodes", "Elastic Beanstalk"],
+          "correctOption": 1,
           "points": 200
         },
         {
-          "id": "aws-q3",
-          "text": "Which service provides serverless compute for event-driven code?",
-          "options": ["Lambda", "RDS", "EKS", "Elastic Beanstalk"],
-          "correctOption": 0,
+          "id": "aws-300",
+          "text": "NAT Gateway is used for ...",
+          "options": ["Inbound internet to private subnets", "Outbound internet from private subnets", "VPC peering", "DNS resolution"],
+          "correctOption": 1,
           "points": 300
         },
         {
-          "id": "aws-q4",
-          "text": "Which service distributes traffic across multiple targets in one or more AZs?",
-          "options": ["Route 53", "API Gateway", "Application Load Balancer", "Direct Connect"],
+          "id": "aws-400",
+          "text": "RDS Multi-AZ primarily improves ...",
+          "options": ["Read scalability", "Write throughput", "High availability/failover", "Query caching"],
           "correctOption": 2,
           "points": 400
         },
         {
-          "id": "aws-q5",
-          "text": "Which database is managed relational service?",
-          "options": ["RDS", "DynamoDB", "ElastiCache", "Neptune"],
-          "correctOption": 0,
+          "id": "aws-500",
+          "text": "Which service decouples applications with at-least-once delivery and polling?",
+          "options": ["SNS", "SQS", "EventBridge Pipes", "Kinesis Data Firehose"],
+          "correctOption": 1,
           "points": 500
         },
         {
-          "id": "aws-q6",
-          "text": "To manage infrastructure as code with templates, use:",
-          "options": ["CloudFormation", "CloudTrail", "CloudWatch", "AWS Config"],
-          "correctOption": 0,
+          "id": "aws-600",
+          "text": "CloudTrail is used to ...",
+          "options": ["Provision infrastructure", "Track API calls and account activity", "Collect metrics", "Stream logs"],
+          "correctOption": 1,
           "points": 600
         },
         {
-          "id": "aws-q7",
-          "text": "Which service provides global DNS and health checks?",
-          "options": ["CloudFront", "Route 53", "Shield", "WAF"],
+          "id": "aws-700",
+          "text": "Which service provides global DNS with health checks and routing policies?",
+          "options": ["CloudFront", "Route 53", "Global Accelerator", "ELB"],
           "correctOption": 1,
           "points": 700
         },
         {
-          "id": "aws-q8",
-          "text": "Which storage is a block device that attaches to EC2?",
-          "options": ["EFS", "S3", "Glacier", "EBS"],
-          "correctOption": 3,
+          "id": "aws-800",
+          "text": "Which storage is a block device for EC2 instances?",
+          "options": ["EBS", "S3", "EFS", "Glacier Deep Archive"],
+          "correctOption": 0,
           "points": 800
         },
         {
-          "id": "aws-q9",
-          "text": "Which service collects and visualizes metrics/logs for monitoring?",
-          "options": ["CloudWatch", "CloudTrail", "Config", "X-Ray"],
-          "correctOption": 0,
+          "id": "aws-900",
+          "text": "Lambda reserved concurrency guarantees ...",
+          "options": ["Higher memory", "Fixed execution time", "A set number of concurrent executions", "Free invocations"],
+          "correctOption": 2,
           "points": 900
         },
         {
-          "id": "aws-q10",
-          "text": "Which service offers fully managed NoSQL key-value database?",
-          "options": ["Aurora", "DynamoDB", "OpenSearch", "DocumentDB"],
+          "id": "aws-1000",
+          "text": "Which service stores and scans container images?",
+          "options": ["CodeCommit", "ECR", "S3", "EKS"],
           "correctOption": 1,
           "points": 1000
         }
