@@ -6,22 +6,14 @@ applications:
       phases:
         preBuild:
           commands:
-            - npm ci
+            - npm ci                 # Install deps
         build:
           commands:
-            - npm run build  
+            - npm run build          # Vite builds into dist/
       artifacts:
-        baseDirectory: dist
+        baseDirectory: dist          # Publish the dist/ folder
         files:
           - '**/*'
       cache:
         paths:
           - node_modules/**/*
-    test:
-      phases:
-        preTest:
-          commands:
-            - echo "No tests configured"
-        test:
-          commands:
-            - echo "Skipping tests"
