@@ -7,8 +7,6 @@ import UserManagement from './UserManagement';
 import BadgeShowcase from './BadgeShowcase';
 import EventCalendar from './EventCalendar';
 import Community from './Community';
-import GameBoard from './GameBoard';
-import quizData1 from '../data/quizData.ts.json'; // data mẫu
 
 interface DashboardProps {
   onStartQuiz: () => void;
@@ -20,24 +18,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
   const [activeTab, setActiveTab] = useState('overview');
 
   if (!user) return null;
-
-  // + add: state game tối giản
-  const [answeredQuestions, setAnsweredQuestions] = useState<Set<string>>(new Set());
-  const categories = quizData1.categories;
-  const [score, setScore] = useState<number>(quizData1.scoreInit ?? 0);
-
-  // + add: handler click câu hỏi
-  const handleSelectQuestion = (q: any) => {
-    // NOTE: minimal; no modal. Just mark as answered & add score.
-    setAnsweredQuestions(prev => {
-      if (prev.has(q.id)) return prev;
-      const next = new Set(prev);
-      next.add(q.id);
-      return next;
-    });
-    setScore(s => s + (q.points || 0));
-  };
-
 
   const totalQuestions = 35; // 7 categories × 5 questions each
   const completedQuestions = user.progress?.completedQuestions.length || 0;
@@ -66,17 +46,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
     }
 
     if (activeTab === 'community') {
-      return (
-        <GameBoard
-          categories={categories}
-          answeredQuestions={answeredQuestions}
-          onSelectQuestion={handleSelectQuestion}
-          score={score}
-          user={user}
-          onDashboard={() => setActiveTab('overview')}
-          onBackToLanding={onBackToLanding}
-        />
-      );
+      return <Community />;
     }
 
     switch (user.role) {
