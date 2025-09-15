@@ -300,7 +300,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
           </Button>
           
           <Button
-            onClick={() => setActiveTab('community')}
+            onClick={() => { setActiveTab('community'); openPicker(); }} // open file dialog
             variant={activeTab === 'community' ? 'default' : 'outline'}
             className={activeTab === 'community' ? 'bg-blue-600 text-white' : 'border-orange-400 text-orange-300 hover:bg-orange-400/10 hover:text-orange-200'}
           >
@@ -340,6 +340,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
           )}
         </div>
 
+        {/* Hidden PDF picker — open + upload */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/pdf"
+          onChange={onPickPdf} // handle PUT -> API Gateway -> S3
+          hidden
+        />
         {/* Dashboard Content */}
         {getDashboardContent()}
       </div>
