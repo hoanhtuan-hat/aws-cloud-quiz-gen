@@ -64,17 +64,13 @@ echo Deleting old object if exists: %DEST_S3%
 aws s3 rm "%DEST_S3%" --region %REGION% >nul 2>nul
 REM (No error if object not found; we ignore output)
 REM ------------------------------------------------------
-
-
-
-REM Upload PDF test file to S3 input folder (keep original filename)
-echo Uploading %PDF_TEST_FILE% to S3 input folder...
-aws s3 cp "%PDF_TEST_FILE%" "s3://quiz-ai-bucket/ai-quiz/pdf-extract/input-folder/"
+ 
+ 
 if errorlevel 1 (
-    echo ERROR: Failed to upload file to S3
+    echo ERROR: Failed to delete file to S3
     pause
     exit /b 1
 )
-echo SUCCESS: File uploaded to S3
+echo SUCCESS: File deleted
 
 pause

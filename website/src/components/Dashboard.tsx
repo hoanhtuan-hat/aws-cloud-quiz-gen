@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Trophy, Users, BookOpen, BarChart3, Settings, LogOut, Play, Award, ArrowLeft, Calendar, MessageSquare } from 'lucide-react';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
@@ -7,6 +7,7 @@ import UserManagement from './UserManagement';
 import BadgeShowcase from './BadgeShowcase';
 import EventCalendar from './EventCalendar';
 import Community from './Community';
+ 
 
 interface DashboardProps {
   onStartQuiz: () => void;

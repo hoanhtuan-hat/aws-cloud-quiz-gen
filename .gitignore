@@ -1,3 +1,4 @@
 
 __pycache__/
 aws/secret_key_file.txt
+aws/curl_upload_to_s3.bat
