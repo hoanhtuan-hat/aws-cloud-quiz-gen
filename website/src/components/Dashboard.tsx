@@ -37,8 +37,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
       if (!f) return;
 
       // 1) Validate PDF + <=10MB
-      if (f.type !== 'application/pdf') { alert('Chỉ cho phép PDF.'); return; }
-      if (f.size > 10 * 1024 * 1024) { alert('File > 10MB.'); return; }
+      if (f.type !== 'application/pdf') { alert('Only allow PDF.'); return; }
+      if (f.size > 10 * 1024 * 1024) { alert('File size should < 10MB.'); return; }
 
       setBusy(true);
 
@@ -53,11 +53,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
       });
       if (!r.ok) throw new Error('Upload failed');
 
-      alert('Upload thành công. Hệ thống đang xử lý...');
-      // TODO (bước kế): đọc JSON kết quả và mở GameBoard bằng data thật
+      alert('Upload successully. Waiting for server.....');
+      // TODO : load data and jump to gameboard
     } catch (err) {
       console.error(err);
-      alert('Upload lỗi. Vui lòng thử lại.');
+      alert('Error when uploading, please try again!');
     } finally {
       setBusy(false);
       if (e.target) e.target.value = '';

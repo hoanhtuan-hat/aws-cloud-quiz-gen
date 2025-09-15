@@ -61,6 +61,13 @@ REM Compose full S3 object key (same folder you are uploading to)
 set "DEST_S3=s3://quiz-ai-bucket/ai-quiz/pdf-extract/input-folder/%BASENAME%"
 
 echo Deleting old object if exists: %DEST_S3%
+aws s3 rm "s3://quiz-ai-bucket/ai-quiz/pdf-extract/text-output-folder/" --recursive --exclude "text-output-folder/" --region %REGION% >nul 2>nul
+aws s3api put-object --bucket quiz-ai-bucket --key "ai-quiz/pdf-extract/text-output-folder/" --region %REGION% >nul 2>nul
+
+aws s3 rm "s3://quiz-ai-bucket/ai-quiz/gen-quiz/quiz-output-folder/" --recursive --region %REGION% >nul 2>nul
+aws s3api put-object --bucket quiz-ai-bucket --key "ai-quiz/gen-quiz/quiz-output-folder/" --region %REGION% >nul 2>nul
+
+
 aws s3 rm "%DEST_S3%" --region %REGION% >nul 2>nul
 REM (No error if object not found; we ignore output)
 REM ------------------------------------------------------
