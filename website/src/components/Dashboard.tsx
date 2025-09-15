@@ -8,6 +8,8 @@ import BadgeShowcase from './BadgeShowcase';
 import EventCalendar from './EventCalendar';
 import Community from './Community';
  
+const API_BASE = 'https://db5q720r7a.execute-api.us-east-2.amazonaws.com/upload_to_s3/upload'; // <-- PUT base
+
 
 interface DashboardProps {
   onStartQuiz: () => void;
@@ -19,6 +21,48 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
   const [activeTab, setActiveTab] = useState('overview');
 
   if (!user) return null;
+
+  // --- ADD: hidden file input + busy flag ---
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  // --- ADD: open OS picker ---
+  const openPicker = () => fileRef.current?.click();
+
+  // --- ADD: handle PDF upload via API Gateway ---
+  const onPickPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // All comments in English
+    try {
+      const f = e.target.files?.[0];
+      if (!f) return;
+
+      // 1) Validate PDF + <=10MB
+      if (f.type !== 'application/pdf') { alert('Chỉ cho phép PDF.'); return; }
+      if (f.size > 10 * 1024 * 1024) { alert('File > 10MB.'); return; }
+
+      setBusy(true);
+
+      // 2) Build PUT URL like your cURL: <API_BASE>/<filename>
+      const url = `${API_BASE}/${encodeURIComponent(f.name)}`;
+
+      // 3) Upload raw file to API Gateway (which writes to S3)
+      const r = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/pdf' },
+        body: f
+      });
+      if (!r.ok) throw new Error('Upload failed');
+
+      alert('Upload thành công. Hệ thống đang xử lý...');
+      // TODO (bước kế): đọc JSON kết quả và mở GameBoard bằng data thật
+    } catch (err) {
+      console.error(err);
+      alert('Upload lỗi. Vui lòng thử lại.');
+    } finally {
+      setBusy(false);
+      if (e.target) e.target.value = '';
+    }
+  };  
 
   const totalQuestions = 35; // 7 categories × 5 questions each
   const completedQuestions = user.progress?.completedQuestions.length || 0;
