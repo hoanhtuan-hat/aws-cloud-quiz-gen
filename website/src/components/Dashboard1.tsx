@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Trophy, Users, BookOpen, BarChart3, Settings, LogOut, Play, Award, ArrowLeft, Calendar, MessageSquare, Brain } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Trophy, Users, BookOpen, BarChart3, Settings, LogOut, Play, Award, ArrowLeft, Calendar, MessageSquare } from 'lucide-react';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,7 +7,9 @@ import UserManagement from './UserManagement';
 import BadgeShowcase from './BadgeShowcase';
 import EventCalendar from './EventCalendar';
 import Community from './Community';
-import QuizGenerator from './QuizGenerator';
+ 
+const API_BASE = 'https://db5q720r7a.execute-api.us-east-2.amazonaws.com/upload_to_s3/upload'; // <-- PUT base
+
 
 interface DashboardProps {
   onStartQuiz: () => void;
@@ -19,6 +21,48 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
   const [activeTab, setActiveTab] = useState('overview');
 
   if (!user) return null;
+
+  // --- ADD: hidden file input + busy flag ---
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [busy, setBusy] = useState(false);
+
+  // --- ADD: open OS picker ---
+  const openPicker = () => fileRef.current?.click();
+
+  // --- ADD: handle PDF upload via API Gateway ---
+  const onPickPdf = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    // All comments in English
+    try {
+      const f = e.target.files?.[0];
+      if (!f) return;
+
+      // 1) Validate PDF + <=10MB
+      if (f.type !== 'application/pdf') { alert('Only allow PDF.'); return; }
+      if (f.size > 10 * 1024 * 1024) { alert('File size should < 10MB.'); return; }
+
+      setBusy(true);
+
+      // 2) Build PUT URL like your cURL: <API_BASE>/<filename>
+      const url = `${API_BASE}/${encodeURIComponent(f.name)}`;
+
+      // 3) Upload raw file to API Gateway (which writes to S3)
+      const r = await fetch(url, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/pdf' },
+        body: f
+      });
+      if (!r.ok) throw new Error('Upload failed');
+
+      alert('Upload successully. Waiting for server.....');
+      // TODO : load data and jump to gameboard
+    } catch (err) {
+      console.error(err);
+      alert('Error when uploading, please try again!');
+    } finally {
+      setBusy(false);
+      if (e.target) e.target.value = '';
+    }
+  };  
 
   const totalQuestions = 35; // 7 categories × 5 questions each
   const completedQuestions = user.progress?.completedQuestions.length || 0;
@@ -48,10 +92,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
 
     if (activeTab === 'community') {
       return <Community />;
-    }
-
-    if (activeTab === 'quizzes') {
-      return <QuizGenerator />;
     }
 
     switch (user.role) {
@@ -260,7 +300,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
           </Button>
           
           <Button
-            onClick={() => setActiveTab('community')}
+            onClick={() => { setActiveTab('community'); openPicker(); }} // open file dialog
             variant={activeTab === 'community' ? 'default' : 'outline'}
             className={activeTab === 'community' ? 'bg-blue-600 text-white' : 'border-orange-400 text-orange-300 hover:bg-orange-400/10 hover:text-orange-200'}
           >
@@ -275,15 +315,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
           >
             <Calendar className="w-4 h-4 mr-2" />
             Tech Events
-          </Button>
-          
-          <Button
-            onClick={() => setActiveTab('quizzes')}
-            variant={activeTab === 'quizzes' ? 'default' : 'outline'}
-            className={activeTab === 'quizzes' ? 'bg-blue-600 text-white' : 'border-purple-400 text-purple-300 hover:bg-purple-400/10 hover:text-purple-200'}
-          >
-            <Brain className="w-4 h-4 mr-2" />
-            Quizzes
           </Button>
           
           {user.role === 'admin' && (
@@ -309,6 +340,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
           )}
         </div>
 
+        {/* Hidden PDF picker — open + upload */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/pdf"
+          onChange={onPickPdf} // handle PUT -> API Gateway -> S3
+          hidden
+        />
         {/* Dashboard Content */}
         {getDashboardContent()}
       </div>
