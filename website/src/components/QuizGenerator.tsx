@@ -30,43 +30,60 @@ const QuizGenerator: React.FC = () => {
   const openPicker = () => inputRef.current?.click();
 
   // Core upload logic (shared by input change and drag-drop)
-  const uploadPdf = async (file: File) => {
-    // 1) Basic validations
-    if (file.type !== 'application/pdf') {
-      alert('Only PDF files are allowed.');
+// Core upload logic (shared by input change and drag-drop)
+const uploadPdf = async (file: File) => {
+  // 1) Basic validations
+  if (file.type !== 'application/pdf') {
+    alert('Only PDF files are allowed.');
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    alert('File size must be < 10MB.');
+    return;
+  }
+
+  setBusy(true);
+
+  try {
+    // 2) Calculate SHA-256 and Base64 encode it using Web Crypto API
+    const arrayBuffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+
+    // Convert the ArrayBuffer to a Base64 string
+    const hashBase64 = btoa(
+      String.fromCharCode.apply(
+        null,
+        // @ts-ignore
+        new Uint8Array(hashBuffer)
+      )
+    );
+
+    // Alert the Base64 value
+    alert(`Base64(SHA256) of the file is:\n\n${hashBase64}`);
+
+    // 3) PUT to API Gateway (which writes to S3)
+    const url = `${API_BASE}/${encodeURIComponent(file.name)}`;
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/pdf' },
+      body: file,
+    });
+
+    if (!res.ok) {
+      const t = await readTextSafe(res);
+      console.error('Upload failed:', res.status, res.statusText, t);
+      alert(`Upload failed (${res.status}). Please try again.`);
       return;
     }
-    if (file.size > 10 * 1024 * 1024) {
-      alert('File size must be < 10MB.');
-      return;
-    }
 
-    // 2) PUT to API Gateway (which writes to S3)
-    try {
-      setBusy(true);
-      const url = `${API_BASE}/${encodeURIComponent(file.name)}`;
-      const res = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/pdf' },
-        body: file,
-      });
-
-      if (!res.ok) {
-        const t = await readTextSafe(res);
-        console.error('Upload failed:', res.status, res.statusText, t); // gateway/S3 error
-        alert(`Upload failed (${res.status}). Please try again.`);
-        return;
-      }
-
-      alert('Upload succeeded. Server will process your PDF...');
-      // TODO: Add polling or navigation to game board after processing is ready.
-    } catch (err) {
-      console.error(err);
-      alert('Unexpected error. Please try again.');
-    } finally {
-      setBusy(false);
-    }
-  };
+    // TODO: Add polling or navigation to game board after processing is ready.
+  } catch (err) {
+    console.error(err);
+    alert('Unexpected error. Please try again.');
+  } finally {
+    setBusy(false);
+  }
+}; 
 
   // Handle input file change
   const onInputChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
