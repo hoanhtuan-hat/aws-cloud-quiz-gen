@@ -4,6 +4,8 @@ import tempfile
 import hashlib
 import urllib.parse
 from datetime import datetime, timezone
+import base64
+
 
 import boto3
 from botocore.exceptions import ClientError
@@ -16,6 +18,17 @@ def _resp(code: int, obj) -> dict:
         "headers": {"Content-Type": "application/json"},
         "body": json.dumps(obj, ensure_ascii=False),
     }
+
+def _compute_job_id_from_content(file_path: str) -> str:
+    hasher = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        while True:
+            chunk = f.read(4096)
+            if not chunk:
+                break
+            hasher.update(chunk)
+    hash_bytes = hasher.digest()
+    return base64.b64encode(hash_bytes).decode('utf-8')
 
 def _bad(msg: str):
     print(f"ERROR: {msg}")
@@ -126,15 +139,17 @@ def lambda_handler(event, context):
             return _ok("skip")
 
         # compute + always overwrite jobId tag
-        ho = s3.head_object(Bucket=event_bucket, Key=event_key)
-        size = ho.get("ContentLength", 0)
-        computed_job = _compute_job_id(event_bucket, event_key, size)
-        job_id = _set_job_tag(s3, event_bucket, event_key, computed_job)
-        print(f"jobId={job_id} for s3://{event_bucket}/{event_key}")
-
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             s3.download_file(event_bucket, event_key, tmp.name)
             tmp_path = tmp.name
+        
+ 
+        job_id = _compute_job_id_from_content(tmp_path)
+        print(f"Computed jobID from file content: {job_id}")
+
+        _set_job_tag(s3, event_bucket, event_key, job_id)
+        print(f"jobId={job_id} for s3://{event_bucket}/{event_key}")
+
         try:
             text = _extract_text_from_pdf(tmp_path)
             text = _sanitize_text(text)
