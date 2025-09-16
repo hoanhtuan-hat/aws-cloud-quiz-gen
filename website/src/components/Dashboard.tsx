@@ -278,7 +278,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
           </Button>
           
           <Button
-            onClick={() => setActiveTab('Create Quiz')}
+            onClick={() => setActiveTab('quizzes')}
             variant={activeTab === 'quizzes' ? 'default' : 'outline'}
             className={activeTab === 'quizzes' ? 'bg-blue-600 text-white' : 'border-purple-400 text-purple-300 hover:bg-purple-400/10 hover:text-purple-200'}
           >
