@@ -32,6 +32,8 @@ const QuizGenerator: React.FC = () => {
   // Core upload logic (shared by input change and drag-drop)
 // Core upload logic (shared by input change and drag-drop)
 const uploadPdf = async (file: File) => {
+  console.log('Hàm uploadPdf đã được gọi!');
+
   // 1) Basic validations
   if (file.type !== 'application/pdf') {
     alert('Only PDF files are allowed.');
