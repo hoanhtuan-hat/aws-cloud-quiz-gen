@@ -50,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
       return <Community />;
     }
 
-    if (activeTab === 'Create Quizz') {
+    if (activeTab === 'quizzes') {
       return <QuizGenerator />;
     }
 
@@ -278,7 +278,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
           </Button>
           
           <Button
-            onClick={() => setActiveTab('quizzes')}
+            onClick={() => setActiveTab('Create Quiz')}
             variant={activeTab === 'quizzes' ? 'default' : 'outline'}
             className={activeTab === 'quizzes' ? 'bg-blue-600 text-white' : 'border-purple-400 text-purple-300 hover:bg-purple-400/10 hover:text-purple-200'}
           >
