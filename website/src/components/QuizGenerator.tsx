@@ -59,7 +59,7 @@ const uploadPdf = async (file: File) => {
     );
 
     // Alert the Base64 value
-    alert(`Base64(SHA256) of the file is:\n\n${hashBase64}`);
+    console.log(`Base64(SHA256) of the file is: ${hashBase64}`);
 
     // 3) PUT to API Gateway (which writes to S3)
     const url = `${API_BASE}/${encodeURIComponent(file.name)}`;
