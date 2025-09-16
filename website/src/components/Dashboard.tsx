@@ -50,7 +50,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onStartQuiz, onBackToLanding }) =
       return <Community />;
     }
 
-    if (activeTab === 'quizzes') {
+    if (activeTab === 'Create Quizz') {
       return <QuizGenerator />;
     }
 
