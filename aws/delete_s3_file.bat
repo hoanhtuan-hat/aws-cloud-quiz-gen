@@ -57,21 +57,25 @@ REM ---- Delete same filename on S3 before uploading ----
 REM Get file name (name + extension) from local path
 for %%F in ("%PDF_TEST_FILE%") do set "BASENAME=%%~nxF"
 
-REM Compose full S3 object key (same folder you are uploading to)
-set "DEST_S3=s3://quiz-ai-bucket/ai-quiz/pdf-extract/input-folder/%BASENAME%"
-
-echo Deleting old object if exists: %DEST_S3%
-aws s3 rm "s3://quiz-ai-bucket/ai-quiz/pdf-extract/text-output-folder/" --recursive --exclude "text-output-folder/" --region %REGION% >nul 2>nul
-aws s3api put-object --bucket quiz-ai-bucket --key "ai-quiz/pdf-extract/text-output-folder/" --region %REGION% >nul 2>nul
-
-aws s3 rm "s3://quiz-ai-bucket/ai-quiz/gen-quiz/quiz-output-folder/" --recursive --region %REGION% >nul 2>nul
-aws s3api put-object --bucket quiz-ai-bucket --key "ai-quiz/gen-quiz/quiz-output-folder/" --region %REGION% >nul 2>nul
+set "DEST_S3=s3://quiz-ai-bucket/ai-quiz/pdf-extract/input-folder/"
+set "DEST_KEY=ai-quiz/pdf-extract/input-folder/"
+echo Deleting old objects from: %DEST_S3%
+aws s3 rm %DEST_S3% --recursive --region %REGION%
+aws s3api put-object --bucket quiz-ai-bucket --key %DEST_KEY% --region %REGION%
 
 
-aws s3 rm "%DEST_S3%" --region %REGION% >nul 2>nul
-REM (No error if object not found; we ignore output)
-REM ------------------------------------------------------
- 
+set "DEST_S3=s3://quiz-ai-bucket/ai-quiz/pdf-extract/text-output-folder/"
+set "DEST_KEY=ai-quiz/pdf-extract/text-output-folder/"
+echo Deleting old objects from: %DEST_S3%
+aws s3 rm %DEST_S3% --recursive --region %REGION%
+aws s3api put-object --bucket quiz-ai-bucket --key %DEST_KEY% --region %REGION%
+
+set "DEST_S3=s3://quiz-ai-bucket/ai-quiz/gen-quiz/quiz-output-folder/"
+set "DEST_KEY=ai-quiz/gen-quiz/quiz-output-folder/"
+echo Deleting old objects from: %DEST_S3%
+aws s3 rm %DEST_S3% --recursive --region %REGION%
+aws s3api put-object --bucket quiz-ai-bucket --key %DEST_KEY% --region %REGION% 
+  
  
 if errorlevel 1 (
     echo ERROR: Failed to delete file to S3

@@ -1,8 +1,10 @@
 REGION=us-east-2
 LOGIN_NAME=tuanho
-IMAGE_NAME=pdf-extract-image
+IMAGE_NAME=quiz_ai
 LAMBDA_FUNCTION_NAME=pdf_extract
 LAMBDA_FUNCTION_NAME_2=gemini_quiz
+LAMBDA_RETURN_JSON=get_json_link_lambda
+LAMBDA_RETURN_PDF=get_pdf_link_lambda
 IMAGE_TAG=latest
 STACK_NAME=pdf-extract-stack
 LAMBDA_TEMPLATE_FILE=lambda_template.yaml

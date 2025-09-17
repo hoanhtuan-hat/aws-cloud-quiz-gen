@@ -3,11 +3,23 @@ import json
 import time
 import inspect
 from typing import Tuple
+import base64
 
 import boto3
 from botocore.exceptions import ClientError
 
-# Hàm lấy số dòng hiện tại
+
+def _compute_job_id_from_content(file_path: str) -> str:
+    hasher = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        while True:
+            chunk = f.read(4096)
+            if not chunk:
+                break
+            hasher.update(chunk)
+    hash_bytes = hasher.digest()
+    return base64.b64encode(hash_bytes).decode('utf-8')
+
 def get_current_line():
     return inspect.currentframe().f_back.f_lineno
 
@@ -127,6 +139,30 @@ def _s3_put_bytes(s3_client, bucket: str, key: str, body: bytes, content_type: s
     print(f"DEBUG - Line {get_current_line()}: Successfully put bytes to S3")
 
 def _build_prompt(src_text: str, job_id: str) -> str:
+    print(f"DEBUG - Line {get_current_line()}: Building prompt for job_id: {job_id}")
+    prompt = (
+        "You are a quiz generator. Your task is to generate a quiz from the source text. "
+        "The quiz must have exactly 10 multiple-choice questions.\n"
+        "Your response must be a single JSON object with the following structure:\n"
+        "{\n"
+        "  \"title\": \"Quiz from the document\",\n"
+        "  \"questions\": [\n"
+        "    {\n"
+        "      \"question\": \"string\",\n"
+        "      \"options\": [\"string\", \"string\", \"string\", \"string\"],\n"
+        "      \"correctAnswer\": \"string\",\n"
+        "      \"explanation\": \"string\"\n"
+        "    }\n"
+        "    // ... 9 more question objects\n"
+        "  ]\n"
+        "}\n\n"
+        "Ensure the JSON is well-formed and does not contain any extra text or code blocks.\n\n"
+        f"JOB_ID: {job_id}\n\n=== SOURCE TEXT START ===\n{src_text[:12000]}\n=== SOURCE TEXT END ===\n"
+    )
+    print(f"DEBUG - Line {get_current_line()}: Prompt built, length: {len(prompt)}")
+    return prompt
+
+def _build_prompt1(src_text: str, job_id: str) -> str:
     print(f"DEBUG - Line {get_current_line()}: Building prompt for job_id: {job_id}")
     prompt = (
         "You are a quiz generator.\n"
@@ -292,21 +328,51 @@ def lambda_handler(event, context):
 
         prompt = _build_prompt(source_text, job_id)
         print(f"DEBUG - Line {get_current_line()}: Calling Gemini API")
-        quiz_text = _call_gemini(prompt, model=model, api_key=api_key)
+        quiz_json_string = _call_gemini(prompt, model=model, api_key=api_key)
         print(f"DEBUG - Line {get_current_line()}: Gemini API call successful")
+
+        # Parse the JSON for processing and PDF generation
+        try:
+            # Gemini might add '```json' and '```', so remove them
+            if quiz_json_string.strip().startswith("```json"):
+                quiz_json_string = quiz_json_string.strip()[7:-3].strip()
+            
+            quiz_data = json.loads(quiz_json_string)
+            print(f"DEBUG - Line {get_current_line()}: Successfully parsed Gemini response as JSON.")
+            
+            # Create text string for PDF from the JSON data
+            quiz_text_for_pdf = f"{quiz_data['title']}\n\n"
+            for i, q in enumerate(quiz_data['questions']):
+                quiz_text_for_pdf += f"{i + 1}. {q['question']}\n"
+                for j, option in enumerate(q['options']):
+                    quiz_text_for_pdf += f"   {chr(65 + j)}. {option}\n"
+                quiz_text_for_pdf += f"Answer: {q['correctAnswer']}\n"
+                if q.get('explanation'):
+                    quiz_text_for_pdf += f"Explanation: {q['explanation']}\n"
+                quiz_text_for_pdf += "\n"
+
+        except json.JSONDecodeError as e:
+            print(f"DEBUG - Line {get_current_line()}: ERROR parsing JSON response from Gemini: {e}")
+            return _err(f"failed to parse quiz JSON: {e}")
+        except KeyError as e:
+            print(f"DEBUG - Line {get_current_line()}: ERROR: Missing key in JSON response: {e}")
+            return _err(f"malformed quiz JSON: {e}")
+
 
         # Save output
         print(f"DEBUG - Line {get_current_line()}: Saving output to S3")
         out_base = f"{out_prefix}{job_id}/"
-        txt_key = f"{out_base}quiz.txt"
+        json_key = f"{out_base}quiz.json"
         pdf_key = f"{out_base}quiz.pdf"
-        
-        _s3_put_text(s3, out_bucket, txt_key, quiz_text)
-        print(f"DEBUG - Line {get_current_line()}: Text output saved to: s3://{out_bucket}/{txt_key}")
 
+        # Save JSON file
+        _s3_put_text(s3, out_bucket, json_key, quiz_json_string)
+        print(f"DEBUG - Line {get_current_line()}: JSON output saved to: s3://{out_bucket}/{json_key}")
+
+        # Generate and save PDF file
         pdf_saved = False
         try:
-            pdf_bytes = _make_pdf_bytes(quiz_text)
+            pdf_bytes = _make_pdf_bytes(quiz_text_for_pdf)
             _s3_put_bytes(s3, out_bucket, pdf_key, pdf_bytes, "application/pdf")
             pdf_saved = True
             print(f"DEBUG - Line {get_current_line()}: PDF output saved to: s3://{out_bucket}/{pdf_key}")
@@ -318,11 +384,12 @@ def lambda_handler(event, context):
             "job_id": job_id,
             "input": {"bucket": in_bucket, "key": data_key},
             "output": {
-                "txt": {"bucket": out_bucket, "key": txt_key},
+                "json": {"bucket": out_bucket, "key": json_key},
                 "pdf": {"bucket": out_bucket, "key": pdf_key, "saved": pdf_saved},
             },
             "model": model
         })
+
     except Exception as e:
         print(f"DEBUG - Line {get_current_line()}: === UNHANDLED EXCEPTION ===")
         print(f"DEBUG - Line {get_current_line()}: Error type: {type(e).__name__}")

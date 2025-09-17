@@ -9,7 +9,9 @@ RUN pip install --no-cache-dir -r requirements.txt
   
 COPY pdf_extractor.py /var/task/  
 COPY gemini_quiz.py   /var/task/  
-#COPY quiz_gen.py   /var/task/  
+COPY get_json_link_lambda.py   /var/task/  
+COPY get_pdf_link_lambda.py   /var/task/  
+
   
 # default for function #1; function #2 overrides handler in Lambda config  
 CMD ["pdf_extractor.lambda_handler"] 

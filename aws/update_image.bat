@@ -10,6 +10,8 @@ for /f "tokens=1,* delims==" %%a in (aws_config.txt) do (
     if "%%a"=="LOGIN_NAME" set LOGIN_NAME=%%b
     if "%%a"=="LAMBDA_FUNCTION_NAME" set LAMBDA_FUNCTION_NAME=%%b
     if "%%a"=="LAMBDA_FUNCTION_NAME_2" set LAMBDA_FUNCTION_NAME_2=%%b
+    if "%%a"=="LAMBDA_RETURN_PDF" set LAMBDA_RETURN_PDF=%%b
+    if "%%a"=="LAMBDA_RETURN_JSON" set LAMBDA_RETURN_JSON=%%b        
 )
 
 rem Read config file and set variables
@@ -23,6 +25,8 @@ REM Trim spaces from values
 set IMAGE_NAME=%IMAGE_NAME: =%
 set REGION=%REGION: =%
 set LAMBDA_FUNCTION_NAME=%LAMBDA_FUNCTION_NAME: =%
+set LAMBDA_RETURN_PDF=%LAMBDA_RETURN_PDF: =%
+set LAMBDA_RETURN_JSON=%LAMBDA_RETURN_JSON: =%
 set LAMBDA_FUNCTION_NAME_2=%LAMBDA_FUNCTION_NAME_2: =%
 
 REM Set AWS credentials
@@ -40,7 +44,7 @@ if errorlevel 1 (
 )
 
 REM Set ECR repository name (from template)
-set REPO_NAME=quiz-ai
+set REPO_NAME=%IMAGE_NAME%
 set ECR_URI=%ACCOUNT_ID%.dkr.ecr.%REGION%.amazonaws.com
 
 REM [2/8] Build Docker image
@@ -124,6 +128,41 @@ if errorlevel 1 (
     echo Lambda function exists, updating with new image...
     aws lambda update-function-code --no-cli-pager --function-name "%LAMBDA_FUNCTION_NAME_2%" --image-uri "%ECR_URI%/%REPO_NAME%@%IMAGE_DIGEST%" --region "%REGION%"
 )
+
+REM Check if Lambda function exists and update or create accordingly
+aws lambda get-function  --no-cli-pager --function-name "%LAMBDA_RETURN_PDF%" --region "%REGION%" >nul 2>nul
+if errorlevel 1 (
+    echo Lambda function does not exist, creating new function...
+    aws lambda create-function  --no-cli-pager --function-name "%LAMBDA_RETURN_PDF%" --package-type Image --code ImageUri="%ECR_URI%/%REPO_NAME%@%IMAGE_DIGEST%" --role "%ROLE_ARN%" --memory-size 128 --timeout 30 --region "%REGION%"
+) else (
+    echo Lambda function exists, updating with new image...
+    aws lambda update-function-code --no-cli-pager --function-name "%LAMBDA_RETURN_PDF%" --image-uri "%ECR_URI%/%REPO_NAME%@%IMAGE_DIGEST%" --region "%REGION%"
+)
+
+REM Check if Lambda function exists and update or create accordingly
+aws lambda get-function  --no-cli-pager --function-name "%LAMBDA_RETURN_JSON%" --region "%REGION%" >nul 2>nul
+if errorlevel 1 (
+    echo Lambda function does not exist, creating new function...
+    aws lambda create-function  --no-cli-pager --function-name "%LAMBDA_RETURN_JSON%" --package-type Image --code ImageUri="%ECR_URI%/%REPO_NAME%@%IMAGE_DIGEST%" --role "%ROLE_ARN%" --memory-size 128 --timeout 30 --region "%REGION%"
+) else (
+    echo Lambda function exists, updating with new image...
+    aws lambda update-function-code --no-cli-pager --function-name "%LAMBDA_RETURN_JSON%" --image-uri "%ECR_URI%/%REPO_NAME%@%IMAGE_DIGEST%" --region "%REGION%"
+)
+
+
+@REM echo Updating handler for %LAMBDA_FUNCTION_NAME% to %IMAGE_NAME%.lambda_handler
+@REM aws lambda update-function-configuration --no-cli-pager --function-name "%LAMBDA_FUNCTION_NAME%" --handler "%IMAGE_NAME%.lambda_handler" --region "%REGION%"
+
+@REM echo Updating handler for %LAMBDA_FUNCTION_NAME_2% to %IMAGE_NAME%.lambda_handler
+@REM aws lambda update-function-configuration --no-cli-pager --function-name "%LAMBDA_FUNCTION_NAME_2%" --handler "%IMAGE_NAME%.lambda_handler" --region "%REGION%"
+
+@REM echo Updating handler for %LAMBDA_RETURN_PDF% to %IMAGE_NAME%.get_pdf_link_lambda_handler
+@REM aws lambda update-function-configuration --no-cli-pager --function-name "%LAMBDA_RETURN_PDF%" --handler "get_pdf_link_lambda.lambda_handler" --region "%REGION%"
+
+@REM echo Updating handler for %LAMBDA_RETURN_JSON% to %IMAGE_NAME%.get_json_link_lambda_handler
+@REM aws lambda update-function-configuration --no-cli-pager --function-name "%LAMBDA_RETURN_JSON%" --handler "get_json_link_lambda.lambda_handler" --region "%REGION%"
+
+
 
 if errorlevel 1 (
     echo ERROR: Failed to update Lambda function
