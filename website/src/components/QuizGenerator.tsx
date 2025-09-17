@@ -35,6 +35,7 @@ const arrayBufferToHex = (arrayBuffer: ArrayBuffer) => {
     .join('');
 };
 
+// Hàm tính toán jobId từ nội dung file, đảm bảo khớp với backend
 const sha256 = async (input: ArrayBuffer) => {
   const hashBuffer = await crypto.subtle.digest('SHA-256', input);
   const hashArray = new Uint8Array(hashBuffer);
@@ -67,10 +68,12 @@ const QuizGenerator: React.FC = () => {
     setIsProcessing(true);
 
     try {
+      // BƯỚC 1: TÍNH TOÁN jobId ĐỂ DÙNG SAU NÀY
       const fileBuffer = await file.arrayBuffer();
       const jobId = await sha256(fileBuffer);
       console.log(`Computed jobId from file content: ${jobId}`);
       
+      // BƯỚC 2: GỌI API UPLOAD
       const uploadResponse = await fetch(`${API_UPLOAD_PDF}/${encodeURIComponent(file.name)}`, {
         method: 'PUT',
         body: file,
@@ -85,6 +88,7 @@ const QuizGenerator: React.FC = () => {
       }
 
       console.log(`PDF uploaded. Starting polling with jobId: ${jobId}`);
+      // BƯỚC 3: GỌI HÀM POLLFORQUIZ VỚI JOBID VỪA TẠO
       await pollForQuiz(jobId);
     } catch (error) {
       console.error('An error occurred:', error);
@@ -101,7 +105,7 @@ const QuizGenerator: React.FC = () => {
     let quizData: GeneratedQuiz | null = null;
     let attempts = 0;
     const maxAttempts = 20;
-    const pollInterval = 10000;
+    const pollInterval = 3000;
 
     while (attempts < maxAttempts) {
       attempts++;
@@ -111,7 +115,6 @@ const QuizGenerator: React.FC = () => {
         const data = await response.json();
 
         // FIX: Directly check for 'title' property to confirm valid quiz data
-        // Your API returns the JSON directly, not wrapped in a 'status' object.
         if (response.ok && data.title) {
           console.log('Quiz data is ready!');
           quizData = data;
@@ -127,9 +130,7 @@ const QuizGenerator: React.FC = () => {
           console.log('Quiz is still processing. Waiting...');
           await new Promise((resolve) => setTimeout(resolve, pollInterval));
         } else {
-          // This else block handles non-ok responses from the API
-          // and cases where the JSON structure is unexpected
-          throw new Error(`API error: ${data.message || data.error || 'Unknown error'}`);
+          throw new Error(`API error: ${data.message || data.error}`);
         }
       } catch (error) {
         console.error('Polling failed:', error);
