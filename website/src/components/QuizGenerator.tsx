@@ -101,7 +101,7 @@ const QuizGenerator: React.FC = () => {
     let quizData: GeneratedQuiz | null = null;
     let attempts = 0;
     const maxAttempts = 20;
-    const pollInterval = 3000;
+    const pollInterval = 7000;
 
     while (attempts < maxAttempts) {
       attempts++;
