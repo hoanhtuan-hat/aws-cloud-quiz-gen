@@ -28,7 +28,8 @@ def _compute_job_id_from_content(file_path: str) -> str:
                 break
             hasher.update(chunk)
     hash_bytes = hasher.digest()
-    return base64.b64encode(hash_bytes).decode('utf-8')
+    return base64.urlsafe_b64encode(hash_bytes).decode('utf-8').rstrip('=')
+
 
 def _bad(msg: str):
     print(f"ERROR: {msg}")
