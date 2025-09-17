@@ -29,6 +29,21 @@ const readTextSafe = async (r: Response) => {
   }
 };
 
+const arrayBufferToHex = (arrayBuffer: ArrayBuffer) => {
+  return Array.prototype.map
+    .call(new Uint8Array(arrayBuffer), (n) => n.toString(16).padStart(2, '0'))
+    .join('');
+};
+
+const sha256 = async (input: ArrayBuffer) => {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', input);
+  const hashArray = new Uint8Array(hashBuffer);
+  const base64string = btoa(
+    String.fromCharCode.apply(null, Array.from(hashArray))
+  );
+  return base64string.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+};
+
 const QuizGenerator: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -52,7 +67,10 @@ const QuizGenerator: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      // FIX: Append the filename to the URL
+      const fileBuffer = await file.arrayBuffer();
+      const jobId = await sha256(fileBuffer);
+      console.log(`Computed jobId from file content: ${jobId}`);
+      
       const uploadResponse = await fetch(`${API_UPLOAD_PDF}/${encodeURIComponent(file.name)}`, {
         method: 'PUT',
         body: file,
@@ -66,10 +84,7 @@ const QuizGenerator: React.FC = () => {
         throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
       }
 
-      const uploadData = await uploadResponse.json();
-      const jobId = uploadData.job_id;
-      console.log(`PDF uploaded. Received jobId: ${jobId}`);
-
+      console.log(`PDF uploaded. Starting polling with jobId: ${jobId}`);
       await pollForQuiz(jobId);
     } catch (error) {
       console.error('An error occurred:', error);
@@ -95,10 +110,12 @@ const QuizGenerator: React.FC = () => {
         const response = await fetch(`${API_GET_QUIZ_JSON}/${jobId}`);
         const data = await response.json();
 
-        if (response.ok && data.status === 'ready') {
+        // FIX: Directly check for 'title' property to confirm valid quiz data
+        // Your API returns the JSON directly, not wrapped in a 'status' object.
+        if (response.ok && data.title) {
           console.log('Quiz data is ready!');
-          quizData = data.quiz;
-          setGeneratedQuiz(data.quiz);
+          quizData = data;
+          setGeneratedQuiz(data);
           setIsProcessing(false);
           toast({
             title: 'Success',
@@ -106,11 +123,13 @@ const QuizGenerator: React.FC = () => {
             variant: 'success',
           });
           break;
-        } else if (data.status === 'processing') {
+        } else if (response.ok && data.status === 'processing') {
           console.log('Quiz is still processing. Waiting...');
           await new Promise((resolve) => setTimeout(resolve, pollInterval));
         } else {
-          throw new Error(`API error: ${data.message || data.error}`);
+          // This else block handles non-ok responses from the API
+          // and cases where the JSON structure is unexpected
+          throw new Error(`API error: ${data.message || data.error || 'Unknown error'}`);
         }
       } catch (error) {
         console.error('Polling failed:', error);
