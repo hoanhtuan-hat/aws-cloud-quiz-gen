@@ -114,23 +114,28 @@ const QuizGenerator: React.FC = () => {
         const response = await fetch(`${API_GET_QUIZ_JSON}/${jobId}`);
         const data = await response.json();
 
-        // FIX: Directly check for 'title' property to confirm valid quiz data
-        if (response.ok && data.title) {
-          console.log('Quiz data is ready!');
-          quizData = data;
-          setGeneratedQuiz(data);
-          setIsProcessing(false);
-          toast({
-            title: 'Success',
-            description: 'Quiz generated successfully!',
-            variant: 'success',
-          });
-          break;
-        } else if (response.ok && data.status === 'processing') {
-          console.log('Quiz is still processing. Waiting...');
-          await new Promise((resolve) => setTimeout(resolve, pollInterval));
-        } else {
-          throw new Error(`API error: ${data.message || data.error}`);
+        if (response.status === 200) {
+            const data = await response.json();
+            if (data.title) { // Correct JSON format is received
+                quizData = data;
+                setGeneratedQuiz(data);
+                setIsProcessing(false);
+                toast({
+                    title: 'Success',
+                    description: 'Quiz generated successfully!',
+                    variant: 'success',
+                });
+                break;
+            } else { // JSON format is not as expected, keep polling
+                console.log('Quiz JSON is malformed, waiting...');
+            }
+        } else if (response.status === 404) { // File not found, keep polling
+            console.log('Quiz file not found, still processing...');
+            await new Promise((resolve) => setTimeout(resolve, pollInterval));
+            continue;
+        } else { // Handle other API errors and stop
+            const errorText = await response.text();
+            throw new Error(`API error: ${response.status} - ${errorText}`);
         }
       } catch (error) {
         console.error('Polling failed:', error);
