@@ -58,7 +58,7 @@ const InteractiveQuiz: React.FC<InteractiveQuizProps> = ({ quiz, onBack, onCompl
         setShowResult(false);
         setIsCorrect(false);
       }
-    }, 2000);
+    }, 7000);
   };
 
   const downloadQuiz = () => {
