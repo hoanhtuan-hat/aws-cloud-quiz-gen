@@ -67,9 +67,9 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
           </div>
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
             <Shield className="w-12 h-12 text-green-400 mx-auto mb-3" />
-            <h3 className="text-white font-semibold mb-2">AI Guidance</h3>
+            <h3 className="text-white font-semibold mb-2">AI Quiz Generation</h3>
             <p className="text-gray-300 text-sm">
-              Get personalized learning recommendations and instant support from your AI mentor companion
+              Generate quizs by using your own PDF file
             </p>
           </div>
         </div>
@@ -80,11 +80,11 @@ const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
           <div className="grid md:grid-cols-2 gap-4 text-sm text-gray-300">
             <div className="text-left">
               <p className="mb-2">• Access quizzes in ≤2 clicks (reduced from 7+)</p>
-              <p className="mb-2">• Earn XP, badges, and maintain learning streaks</p>
-              <p>• Track progress across multiple tech domains</p>
+              <p className="mb-2">• Generate quizzes automatically using AI</p>
+              <p>• Earn XP, badges, and maintain learning streaks</p>
             </div>
             <div className="text-left">
-              <p className="mb-2">• Connect with alumni mentors for guidance</p>
+              <p className="mb-2">• Track progress across multiple tech domains</p>
               <p className="mb-2">• Get AI-powered learning recommendations</p>
               <p>• Access admin portal and Canvas integration</p>
             </div>
