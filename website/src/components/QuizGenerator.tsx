@@ -11,6 +11,9 @@ const API_UPLOAD_PDF =
 const API_GET_QUIZ_JSON =
   'https://s17lxurnji.execute-api.us-east-2.amazonaws.com/return_json/return_json_data';
 
+const API_GET_PDF_FILE =
+  'https://sqiq0ts7k7.execute-api.us-east-2.amazonaws.com/return_pdf_file/return_pdf_file/{jobId}';
+
 interface GeneratedQuiz {
   title: string;
   questions: Array<{
@@ -28,7 +31,9 @@ const readTextSafe = async (r: Response) => {
     return '';
   }
 };
+ 
 
+ 
 const arrayBufferToHex = (arrayBuffer: ArrayBuffer) => {
   return Array.prototype.map
     .call(new Uint8Array(arrayBuffer), (n) => n.toString(16).padStart(2, '0'))
@@ -51,6 +56,7 @@ const QuizGenerator: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [generatedQuiz, setGeneratedQuiz] = useState<GeneratedQuiz | null>(null);
   const [isQuizMode, setIsQuizMode] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);  
 
   const openPicker = () => inputRef.current?.click();
 
@@ -68,8 +74,9 @@ const QuizGenerator: React.FC = () => {
 
     try {
       const fileBuffer = await file.arrayBuffer();
-      const jobId = await sha256(fileBuffer);
-      console.log(`Computed jobId from file content: ${jobId}`);
+      const newJobId = await sha256(fileBuffer);
+      setJobId(newJobId); 
+      console.log(`Computed jobId from file content: ${newJobId}`);
       
       const uploadResponse = await fetch(`${API_UPLOAD_PDF}/${encodeURIComponent(file.name)}`, {
         method: 'PUT',
@@ -84,8 +91,8 @@ const QuizGenerator: React.FC = () => {
         throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
       }
 
-      console.log(`PDF uploaded. Starting polling with jobId: ${jobId}`);
-      await pollForQuiz(jobId);
+      console.log(`PDF uploaded. Starting polling with jobId: ${newJobId}`);
+      await pollForQuiz(newJobId);
     } catch (error) {
       console.error('An error occurred:', error);
       toast({
@@ -97,6 +104,49 @@ const QuizGenerator: React.FC = () => {
     }
   };
 
+const downloadPdf = async () => {
+  if (!jobId) {
+    toast({
+      title: 'Error',
+      description: 'PDF file not found. Please upload a file first.',
+      variant: 'destructive',
+    });
+    return;
+  }
+
+  const apiUrl = API_GET_PDF_FILE.replace('{jobId}', jobId);
+  
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to download PDF: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'original_document.pdf');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    toast({
+      title: 'Success',
+      description: 'PDF downloaded successfully!',
+      variant: 'success',
+    });
+  } catch (error) {
+    console.error('Download failed:', error);
+    toast({
+      title: 'Error',
+      description: `Failed to download PDF: ${error}`,
+      variant: 'destructive',
+    });
+  }
+};
+  
   const pollForQuiz = async (jobId: string) => {
     let quizData: GeneratedQuiz | null = null;
     let attempts = 0;
@@ -301,9 +351,20 @@ const QuizGenerator: React.FC = () => {
               Download Quiz
             </Button>
             <Button
+              onClick={downloadPdf}
+              variant='outline'
+              className='border-purple-400 text-purple-300 hover:bg-purple-400/10 hover:text-purple-200'
+            >
+              <Download className='w-4 h-4 mr-2' />
+              Download PDF
+            </Button>
+            <Button
               variant='outline'
               className='border-yellow-400 text-yellow-300 hover:bg-yellow-400/10 hover:text-yellow-200'
-              onClick={() => setGeneratedQuiz(null)}
+              onClick={() => {
+                setGeneratedQuiz(null);
+                setJobId(null);
+              }}
             >
               Generate New Quiz
             </Button>

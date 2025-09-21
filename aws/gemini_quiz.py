@@ -142,7 +142,7 @@ def _build_prompt(src_text: str, job_id: str) -> str:
     print(f"DEBUG - Line {get_current_line()}: Building prompt for job_id: {job_id}")
     prompt = (
         "You are a quiz generator. Your task is to generate a quiz from the source text. "
-        "The quiz must have exactly 10 multiple-choice questions.\n"
+        "The quiz must have exactly 15 multiple-choice questions.\n"
         "Your response must be a single JSON object with the following structure:\n"
         "{\n"
         "  \"title\": \"Quiz from the document\",\n"
