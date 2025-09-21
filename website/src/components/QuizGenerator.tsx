@@ -117,7 +117,7 @@ const uploadPdf = async (file: File) => {
     }
   };
 
-const downloadPdf = async () => {
+  const downloadPdf = async () => {
     if (!jobId) {
       toast({
         title: 'Error',
@@ -130,30 +130,19 @@ const downloadPdf = async () => {
     const apiUrl = API_GET_PDF_FILE.replace('{jobId}', jobId);
     
     try {
-      // Step 1: Call API Gateway to get the pre-signed URL
+      // Fetch the PDF file directly from the API Gateway
       const response = await fetch(apiUrl);
       if (!response.ok) {
-        throw new Error(`Failed to get PDF URL: ${response.statusText}`);
+        throw new Error(`Failed to download PDF: ${response.statusText}`);
       }
 
-      // Parse the JSON response to get the URL
-      const data = await response.json();
-      if (!data.pdfUrl) {
-        throw new Error('PDF URL not found in API response.');
-      }
-      const pdfUrl = data.pdfUrl;
-
-      // Step 2: Fetch the actual PDF file using the URL from the API
-      const pdfResponse = await fetch(pdfUrl);
-      if (!pdfResponse.ok) {
-        throw new Error(`Failed to download PDF: ${pdfResponse.statusText}`);
-      }
+      // Get the binary data (blob) directly from the response
+      const blob = await response.blob();
       
-      const blob = await pdfResponse.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'Quiz.pdf');
+      link.setAttribute('download', 'original_document.pdf');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

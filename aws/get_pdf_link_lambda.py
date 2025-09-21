@@ -2,19 +2,22 @@ import os
 import json
 import boto3
 from botocore.exceptions import ClientError
+import base64
 
 # Helper function to format the HTTP response
-def _resp(code: int, obj) -> dict:
-    return {
+def _resp(code: int, obj, is_base64=False, content_type="application/json") -> dict:
+    resp = {
         "statusCode": code,
         "headers": {
-            "Content-Type": "application/json",
+            "Content-Type": content_type,
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET",
             "Access-Control-Allow-Headers": "Content-Type",
         },
-        "body": json.dumps(obj, ensure_ascii=False),
+        "isBase64Encoded": is_base64,
+        "body": obj,
     }
+    return resp
 
 def lambda_handler(event, context):
     print(f"DEBUG: === LAMBDA STARTED ===")
@@ -25,7 +28,7 @@ def lambda_handler(event, context):
         job_id = event["pathParameters"].get("jobId")
     
     if not job_id:
-        return _resp(400, {"error": "Missing jobId in path."})
+        return _resp(400, json.dumps({"error": "Missing jobId in path."}))
     
     print(f"DEBUG: Extracted jobId: {job_id}")
 
@@ -43,33 +46,31 @@ def lambda_handler(event, context):
 
     except Exception as e:
         print(f"ERROR: Failed to get S3 path from SSM: {str(e)}")
-        return _resp(500, {"error": "Internal server error."})
+        return _resp(500, json.dumps({"error": "Internal server error."}))
         
     s3 = boto3.client("s3")
-    s3_region = s3.meta.region_name
     
     # 3. Build the full path to the PDF file
     pdf_key = f"{out_prefix}{job_id}/quiz.pdf"
-    pdf_url = f"https://{out_bucket}.s3.{s3_region}.amazonaws.com/{pdf_key}"
     
-    # 4. Check if the file exists
+    # 4. Try to get the PDF file from S3
     try:
-        s3.head_object(Bucket=out_bucket, Key=pdf_key)
+        s3_object = s3.get_object(Bucket=out_bucket, Key=pdf_key)
+        pdf_content = s3_object['Body'].read()
         
-        # If the file exists, return the URL
-        return _resp(200, {
-            "status": "ready",
-            "pdfUrl": pdf_url
-        })
+        # 5. Base64 encode the content and return it
+        encoded_content = base64.b64encode(pdf_content).decode('utf-8')
+        
+        return _resp(200, encoded_content, is_base64=True, content_type="application/pdf")
     
     except ClientError as e:
-        if e.response['Error']['Code'] == '404':
+        if e.response['Error']['Code'] == 'NoSuchKey':
             # File is not ready yet
-            return _resp(202, {"status": "processing", "message": "PDF file not ready yet."})
+            return _resp(202, json.dumps({"status": "processing", "message": "PDF file not ready yet."}))
         else:
             print(f"ERROR: S3 error: {str(e)}")
-            return _resp(500, {"error": "Internal S3 error."})
+            return _resp(500, json.dumps({"error": "Internal S3 error."}))
     
     except Exception as e:
         print(f"ERROR: Unhandled exception: {str(e)}")
-        return _resp(500, {"error": "An unexpected error occurred."})
+        return _resp(500, json.dumps({"error": "An unexpected error occurred."}))
