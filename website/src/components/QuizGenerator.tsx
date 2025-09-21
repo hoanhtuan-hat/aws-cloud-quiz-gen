@@ -60,7 +60,8 @@ const QuizGenerator: React.FC = () => {
 
   const openPicker = () => inputRef.current?.click();
 
-  const uploadPdf = async (file: File) => {
+const uploadPdf = async (file: File) => {
+    // Check file type
     if (file.type !== 'application/pdf') {
       toast({
         title: 'Invalid file type',
@@ -70,11 +71,23 @@ const QuizGenerator: React.FC = () => {
       return;
     }
 
+    // Check file size (Add this part)
+    const MAX_FILE_SIZE_MB = 10;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+    
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast({
+            title: 'File too large',
+            description: `Please upload a file smaller than ${MAX_FILE_SIZE_MB}MB.`,
+            variant: 'destructive',
+        });
+        return;
+    }
+
     setIsProcessing(true);
 
     try {
-      const fileBuffer = await file.arrayBuffer();
-      const newJobId = await sha256(fileBuffer);
+      const newJobId = await sha256(await file.arrayBuffer());
       setJobId(newJobId); 
       console.log(`Computed jobId from file content: ${newJobId}`);
       
