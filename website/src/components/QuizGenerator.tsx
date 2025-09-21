@@ -118,47 +118,61 @@ const uploadPdf = async (file: File) => {
   };
 
 const downloadPdf = async () => {
-  if (!jobId) {
-    toast({
-      title: 'Error',
-      description: 'PDF file not found. Please upload a file first.',
-      variant: 'destructive',
-    });
-    return;
-  }
-
-  const apiUrl = API_GET_PDF_FILE.replace('{jobId}', jobId);
-  
-  try {
-    const response = await fetch(apiUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to download PDF: ${response.statusText}`);
+    if (!jobId) {
+      toast({
+        title: 'Error',
+        description: 'PDF file not found. Please upload a file first.',
+        variant: 'destructive',
+      });
+      return;
     }
 
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'original_document.pdf');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    const apiUrl = API_GET_PDF_FILE.replace('{jobId}', jobId);
     
-    toast({
-      title: 'Success',
-      description: 'PDF downloaded successfully!',
-      variant: 'success',
-    });
-  } catch (error) {
-    console.error('Download failed:', error);
-    toast({
-      title: 'Error',
-      description: `Failed to download PDF: ${error}`,
-      variant: 'destructive',
-    });
-  }
-};
+    try {
+      // Step 1: Call API Gateway to get the pre-signed URL
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to get PDF URL: ${response.statusText}`);
+      }
+
+      // Parse the JSON response to get the URL
+      const data = await response.json();
+      if (!data.pdfUrl) {
+        throw new Error('PDF URL not found in API response.');
+      }
+      const pdfUrl = data.pdfUrl;
+
+      // Step 2: Fetch the actual PDF file using the URL from the API
+      const pdfResponse = await fetch(pdfUrl);
+      if (!pdfResponse.ok) {
+        throw new Error(`Failed to download PDF: ${pdfResponse.statusText}`);
+      }
+      
+      const blob = await pdfResponse.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Quiz.pdf');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'Success',
+        description: 'PDF downloaded successfully!',
+        variant: 'success',
+      });
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast({
+        title: 'Error',
+        description: `Failed to download PDF: ${error}`,
+        variant: 'destructive',
+      });
+    }
+  };
   
   const pollForQuiz = async (jobId: string) => {
     let quizData: GeneratedQuiz | null = null;
