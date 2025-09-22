@@ -131,25 +131,33 @@ const uploadPdf = async (file: File) => {
     
     try {
       // Fetch the PDF file directly from the API Gateway
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, { headers: { Accept: 'application/pdf' } });
       if (!response.ok) {
         throw new Error(`Failed to download PDF: ${response.statusText}`);
       }
 
-      // Get the binary data (blob) directly from the response
-      // Decide how to read the response: blob (binary) or base64 text fallback
-      const ct = (response.headers.get('content-type') || '').toLowerCase();
-      let blob: Blob;
+      // Only proceed if server really sends a PDF (status 200 + content-type)
+      // 1) Handle "not ready yet"
+      if (response.status === 202) {
+        const msg = await readTextSafe(response);
+        throw new Error(`PDF not ready yet. Server says: ${msg || 'processing'}`);
+      }
 
-      if (ct.includes('application/pdf')) {
-        // API Gateway is correctly configured for binary; just read as blob
-        blob = await response.blob();
-      } else {
-        // Fallback: server sent base64 text; decode it manually
-        const b64 = await response.text();
-        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-        blob = new Blob([bytes], { type: 'application/pdf' });
-      }      
+      // 2) Handle other errors
+      if (response.status !== 200) {
+        const err = await readTextSafe(response);
+        throw new Error(`Failed to download PDF: ${response.status} ${err}`);
+      }
+
+      // 3) Must be a PDF. If not, stop (don't try to decode JSON as base64)
+      const ct = (response.headers.get('content-type') || '').toLowerCase();
+      if (!ct.includes('application/pdf')) {
+        const preview = (await readTextSafe(response)).slice(0, 200);
+        throw new Error(`Unexpected content-type: ${ct}. Preview: ${preview}`);
+      }
+
+      // 4) OK: read as binary
+      const blob = await response.blob();
 
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
