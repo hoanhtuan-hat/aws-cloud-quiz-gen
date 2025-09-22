@@ -4,19 +4,26 @@ import boto3
 from botocore.exceptions import ClientError
 import base64
 
-# Helper function to format the HTTP response
-def _resp(code: int, obj, is_base64=False, content_type="application/json") -> dict:
+def _resp(code: int, obj, is_base64=False, content_type="application/json", extra_headers=None) -> dict:
+    # Ensure body is a string
+    if isinstance(obj, (dict, list)):
+        body_str = json.dumps(obj)
+    else:
+        body_str = obj if isinstance(obj, str) else str(obj)
+
     resp = {
         "statusCode": code,
         "headers": {
-            "Content-Type": content_type,
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET",
-            "Access-Control-Allow-Headers": "Content-Type",
+                "Content-Type": content_type,
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET,OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type,Authorization,Origin,Accept,User-Agent,Cache-Control,Pragma,Range",
         },
-        "isBase64Encoded": is_base64,
-        "body": obj,
+        "isBase64Encoded": bool(is_base64),
+        "body": body_str,
     }
+    if extra_headers:
+        resp["headers"].update(extra_headers)
     return resp
 
 def lambda_handler(event, context):
@@ -61,7 +68,13 @@ def lambda_handler(event, context):
         # 5. Base64 encode the content and return it
         encoded_content = base64.b64encode(pdf_content).decode('utf-8')
         
-        return _resp(200, encoded_content, is_base64=True, content_type="application/pdf")
+        return _resp(
+            200,
+            encoded_content,
+            is_base64=True,
+            content_type="application/pdf",
+            extra_headers={"Content-Disposition": f'attachment; filename="quiz.pdf"'}
+        )    
     
     except ClientError as e:
         if e.response['Error']['Code'] == 'NoSuchKey':
