@@ -137,12 +137,24 @@ const uploadPdf = async (file: File) => {
       }
 
       // Get the binary data (blob) directly from the response
-      const blob = await response.blob();
-      
+      // Decide how to read the response: blob (binary) or base64 text fallback
+      const ct = (response.headers.get('content-type') || '').toLowerCase();
+      let blob: Blob;
+
+      if (ct.includes('application/pdf')) {
+        // API Gateway is correctly configured for binary; just read as blob
+        blob = await response.blob();
+      } else {
+        // Fallback: server sent base64 text; decode it manually
+        const b64 = await response.text();
+        const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+        blob = new Blob([bytes], { type: 'application/pdf' });
+      }      
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'original_document.pdf');
+      link.setAttribute('download', 'quiz.pdf');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
