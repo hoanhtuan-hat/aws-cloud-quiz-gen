@@ -5,6 +5,7 @@ PerX is a serverless learning platform with gamified engagement and mentorship w
 The repository has two top-level folders:
 
 aws/ — Backend (infrastructure as code, configuration, and Lambda services deployed on AWS)
+
 website/ — Frontend (static web app, API integration)
 
 # Objectives
